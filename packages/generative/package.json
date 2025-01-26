@@ -1,13 +1,17 @@
 {
-	"name": "generative",
+	"name": "@desirecraftai/generative",
 	"version": "0.1.0",
-	"main": "index.ts",
-	"types": "index.ts",
+	"private": true,
+	"main": "./index.ts",
+	"types": "./index.ts",
 	"license": "MIT",
 	"scripts": {
+		"test": "vitest",
+		"test:watch": "vitest watch",
+		"lint": "biome check .",
+		"lint:fix": "biome check --apply .",
 		"build": "tsc",
 		"dev": "tsc --watch",
-		"lint": "biome check .",
 		"format": "biome format ."
 	},
 	"dependencies": {
@@ -15,7 +19,9 @@
 		"zod": "^3.22.4"
 	},
 	"devDependencies": {
-		"@types/node": "^20.11.5",
-		"typescript": "^5.3.3"
+		"@types/node": "^20.11.16",
+		"biome": "^0.3.3",
+		"typescript": "^5.3.3",
+		"vitest": "^1.2.2"
 	}
 }
