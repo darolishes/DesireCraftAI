@@ -1,67 +1,60 @@
-# Contributing
+# Contributing to @desirecraftai/generative
 
-## Development
+We love your input! We want to make contributing to @desirecraftai/generative as easy and transparent as possible, whether it's:
 
-1. Install dependencies:
+- Reporting a bug
+- Discussing the current state of the code
+- Submitting a fix
+- Proposing new features
+- Becoming a maintainer
 
-   ```bash
-   pnpm install
-   ```
+## Development Process
 
-2. Make your changes in a feature branch:
+We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
 
-   ```bash
-   git checkout -b feature/your-feature
-   ```
+1. Fork the repo and create your branch from `main`
+2. If you've added code that should be tested, add tests
+3. If you've changed APIs, update the documentation
+4. Ensure the test suite passes
+5. Make sure your code lints
+6. Issue that pull request!
 
-3. Follow the code style:
+## Pull Request Process
 
-   - Use TypeScript
-   - Add proper types
-   - Write tests for new features
-   - Update documentation
+1. Update the README.md with details of changes to the interface
+2. Update the CHANGELOG.md with a note describing your changes
+3. The PR will be merged once you have the sign-off of at least one maintainer
 
-4. Run checks:
+## Any Contributions You Make Will Be Under the MIT Software License
 
-   ```bash
-   pnpm lint
-   pnpm format
-   pnpm build
-   ```
+In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
 
-5. Create a pull request
+## Report Bugs Using GitHub's [Issue Tracker](https://github.com/desirecraftai/generative/issues)
 
-## Project Structure
+We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/desirecraftai/generative/issues/new); it's that easy!
 
-```
-generative/
-├── lib/           # Core implementation
-│   └── client.ts  # Ollama client
-├── types.ts       # Type definitions
-└── index.ts      # Public API
-```
+## Write Bug Reports With Detail, Background, and Sample Code
 
-## Guidelines
+**Great Bug Reports** tend to have:
 
-1. **Types**
+- A quick summary and/or background
+- Steps to reproduce
+  - Be specific!
+  - Give sample code if you can
+- What you expected would happen
+- What actually happens
+- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
 
-   - Use TypeScript
-   - Add Zod schemas for validation
-   - Export types from types.ts
+## Use a Consistent Coding Style
 
-2. **Error Handling**
+- Use TypeScript for all code
+- 2 spaces for indentation
+- Run `pnpm lint` to confirm the style matches the project's standards
 
-   - Use custom error types
-   - Add proper error messages
-   - Handle edge cases
+## License
 
-3. **Testing**
+By contributing, you agree that your contributions will be licensed under its MIT License.
 
-   - Write unit tests
-   - Test error cases
-   - Mock external dependencies
+## References
 
-4. **Documentation**
-   - Update README.md
-   - Add JSDoc comments
-   - Include examples
+This document was adapted from the open-source contribution guidelines for [Facebook's Draft](https://github.com/facebook/draft-js/blob/a9316a723f9e918afde44dea68b5f9f39b7d9b00/CONTRIBUTING.md).
