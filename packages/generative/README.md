@@ -769,3 +769,526 @@ await client.updateModelConfig("llama2", {
   },
 });
 ```
+
+## Configuration Templates
+
+The client provides predefined configuration templates for common use cases:
+
+```typescript
+// List available templates
+const templates = await client.listConfigTemplates();
+
+// Apply low-memory template
+await client.applyConfigTemplate("llama2", "low-memory");
+
+// Apply GPU-optimized template
+await client.applyConfigTemplate("codellama", "gpu-optimized");
+```
+
+### Built-in Templates
+
+1. **Low Memory Mode**
+
+```typescript
+{
+  id: "low-memory",
+  name: "Low Memory Mode",
+  description: "Optimized for systems with limited memory",
+  hardware: {
+    minMemory: 4 * 1024 * 1024 * 1024, // 4GB
+    gpuRequired: false,
+  },
+  config: {
+    parameters: {
+      contextLength: 2048,
+      quantization: "4bit",
+      threads: 4,
+      batchSize: 512,
+    },
+    resources: {
+      maxMemory: 4 * 1024 * 1024 * 1024,
+    },
+    performance: {
+      useGpu: false,
+    },
+  },
+  modelPatterns: ["*"],
+}
+```
+
+2. **GPU Optimized Mode**
+
+```typescript
+{
+  id: "gpu-optimized",
+  name: "GPU Optimized Mode",
+  description: "Optimized for systems with GPU",
+  hardware: {
+    minGpuMemory: 8 * 1024 * 1024 * 1024, // 8GB
+    gpuRequired: true,
+  },
+  config: {
+    parameters: {
+      gpuLayers: 32,
+      batchSize: 1024,
+    },
+    performance: {
+      useGpu: true,
+      useTensorCores: true,
+    },
+  },
+  modelPatterns: ["*"],
+}
+```
+
+## Prompt Templates
+
+The client includes a powerful prompt templating system:
+
+```typescript
+// List available templates
+const templates = await client.listPromptTemplates();
+
+// Use code review template
+const review = await client.generateFromTemplate("code-review", {
+  language: "TypeScript",
+  code: `
+    function add(a: any, b: any) {
+      return a + b;
+    }
+  `,
+});
+
+// Template with custom options
+const result = await client.generateFromTemplate(
+  "code-review",
+  {
+    language: "Python",
+    code: "def add(a, b): return a + b",
+  },
+  {
+    temperature: 0.5,
+    stream: true,
+  }
+);
+```
+
+### Built-in Templates
+
+1. **Code Review**
+
+```typescript
+{
+  id: "code-review",
+  name: "Code Review",
+  description: "Review code changes and provide feedback",
+  template: `Review the following code changes and provide feedback:
+
+Language: {{language}}
+Code:
+{{code}}
+
+Please focus on:
+- Code quality
+- Best practices
+- Potential issues
+- Performance considerations`,
+  variables: [
+    {
+      name: "language",
+      description: "Programming language",
+      required: true,
+    },
+    {
+      name: "code",
+      description: "Code to review",
+      required: true,
+      validation: {
+        minLength: 10,
+      },
+    },
+  ],
+  systemTemplate: "You are an experienced code reviewer with expertise in {{language}}.",
+  modelSettings: {
+    models: ["codellama", "llama2"],
+    temperature: 0.3,
+    configTemplate: "gpu-optimized",
+  },
+}
+```
+
+### Template Features
+
+1. **Variable Validation**
+
+```typescript
+const template = {
+  variables: [
+    {
+      name: "input",
+      required: true,
+      validation: {
+        minLength: 10,
+        maxLength: 1000,
+        pattern: "^[a-zA-Z0-9\\s]+$",
+      },
+    },
+  ],
+};
+```
+
+2. **Model Settings**
+
+```typescript
+const template = {
+  modelSettings: {
+    models: ["llama2", "codellama"],
+    temperature: 0.3,
+    topP: 0.9,
+    configTemplate: "gpu-optimized",
+  },
+};
+```
+
+3. **Example Usage**
+
+```typescript
+const template = {
+  examples: [
+    {
+      description: "Basic example",
+      variables: {
+        input: "Hello, world!",
+      },
+      output: "Expected output here",
+    },
+  ],
+};
+```
+
+### Best Practices
+
+1. **Template Organization**
+
+```typescript
+// Group related templates
+const templates = {
+  code: {
+    review: "code-review",
+    documentation: "code-docs",
+    testing: "code-tests",
+  },
+  content: {
+    blog: "blog-post",
+    social: "social-media",
+  },
+};
+```
+
+2. **Variable Defaults**
+
+```typescript
+const template = {
+  variables: [
+    {
+      name: "format",
+      defaultValue: "markdown",
+      required: false,
+    },
+  ],
+};
+```
+
+3. **Hardware-Aware Templates**
+
+```typescript
+// Check hardware compatibility
+const template = await client.getConfigTemplate("gpu-optimized");
+if (template.hardware?.gpuRequired) {
+  // Check GPU availability
+}
+```
+
+## Logging and Monitoring
+
+The client provides comprehensive logging capabilities through a flexible logging interface:
+
+```typescript
+// Initialize client with custom logger
+const client = new GenerativeClient({
+  logger: new CustomLogger(),
+});
+```
+
+### Logging Categories
+
+1. **Basic Logging**
+
+```typescript
+logger.debug("Debug message", { context: "value" });
+logger.info("Info message", { context: "value" });
+logger.warn("Warning message", { context: "value" });
+logger.error("Error message", new Error("Details"), { context: "value" });
+```
+
+2. **Performance Logging**
+
+```typescript
+logger.logPerformance(
+  "model-load",
+  150, // duration in ms
+  { modelId: "llama2", memory: "16GB" }
+);
+```
+
+3. **Resource Usage**
+
+```typescript
+logger.logResourceUsage(
+  "gpu-memory",
+  8 * 1024 * 1024 * 1024, // 8GB
+  { modelId: "llama2", device: "cuda:0" }
+);
+```
+
+4. **Model Lifecycle**
+
+```typescript
+logger.logModelEvent("load", "llama2", { status: "success", duration: 1500 });
+```
+
+5. **Template Usage**
+
+```typescript
+logger.logTemplateUsage("code-review", "prompt", {
+  variables: { language: "TypeScript" },
+});
+```
+
+6. **Generation Metrics**
+
+```typescript
+logger.logGenerationMetrics(
+  "llama2",
+  {
+    promptTokens: 50,
+    totalTokens: 250,
+    durationMs: 1200,
+    tokensPerSecond: 208.33,
+  },
+  { stream: true }
+);
+```
+
+### Custom Logger Implementation
+
+Create your own logger by implementing the `Logger` interface:
+
+```typescript
+class CustomLogger implements Logger {
+  debug(message: string, context?: Record<string, unknown>) {
+    // Your implementation
+  }
+
+  info(message: string, context?: Record<string, unknown>) {
+    // Your implementation
+  }
+
+  warn(message: string, context?: Record<string, unknown>) {
+    // Your implementation
+  }
+
+  error(message: string, error?: Error, context?: Record<string, unknown>) {
+    // Your implementation
+  }
+
+  logPerformance(
+    operation: string,
+    durationMs: number,
+    context?: Record<string, unknown>
+  ) {
+    // Your implementation
+  }
+
+  logResourceUsage(
+    resource: string,
+    usage: number,
+    context?: Record<string, unknown>
+  ) {
+    // Your implementation
+  }
+
+  logModelEvent(
+    event: "load" | "unload" | "configure",
+    modelId: string,
+    context?: Record<string, unknown>
+  ) {
+    // Your implementation
+  }
+
+  logTemplateUsage(
+    templateId: string,
+    type: "config" | "prompt",
+    context?: Record<string, unknown>
+  ) {
+    // Your implementation
+  }
+
+  logGenerationMetrics(
+    modelId: string,
+    metrics: GenerationMetrics,
+    context?: Record<string, unknown>
+  ) {
+    // Your implementation
+  }
+}
+```
+
+### Integration Examples
+
+1. **Structured Logging with Winston**
+
+```typescript
+import winston from "winston";
+
+class WinstonLogger implements Logger {
+  private logger: winston.Logger;
+
+  constructor() {
+    this.logger = winston.createLogger({
+      level: "info",
+      format: winston.format.json(),
+      transports: [
+        new winston.transports.File({ filename: "error.log", level: "error" }),
+        new winston.transports.File({ filename: "combined.log" }),
+      ],
+    });
+  }
+
+  logGenerationMetrics(
+    modelId: string,
+    metrics: GenerationMetrics,
+    context?: Record<string, unknown>
+  ) {
+    this.logger.info("generation_metrics", {
+      modelId,
+      metrics,
+      context,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // ... implement other methods
+}
+```
+
+2. **Monitoring with Prometheus**
+
+```typescript
+import client from "prom-client";
+
+class PrometheusLogger implements Logger {
+  private tokenCounter: client.Counter;
+  private generationDuration: client.Histogram;
+
+  constructor() {
+    this.tokenCounter = new client.Counter({
+      name: "generation_tokens_total",
+      help: "Total number of tokens generated",
+      labelNames: ["model_id"],
+    });
+
+    this.generationDuration = new client.Histogram({
+      name: "generation_duration_seconds",
+      help: "Generation duration in seconds",
+      labelNames: ["model_id"],
+    });
+  }
+
+  logGenerationMetrics(modelId: string, metrics: GenerationMetrics) {
+    this.tokenCounter.labels(modelId).inc(metrics.totalTokens);
+    this.generationDuration.labels(modelId).observe(metrics.durationMs / 1000);
+  }
+
+  // ... implement other methods
+}
+```
+
+3. **Logging to Multiple Destinations**
+
+```typescript
+class MultiLogger implements Logger {
+  constructor(private loggers: Logger[]) {}
+
+  logGenerationMetrics(
+    modelId: string,
+    metrics: GenerationMetrics,
+    context?: Record<string, unknown>
+  ) {
+    this.loggers.forEach((logger) =>
+      logger.logGenerationMetrics(modelId, metrics, context)
+    );
+  }
+
+  // ... implement other methods
+}
+
+const client = new GenerativeClient({
+  logger: new MultiLogger([
+    new ConsoleLogger(),
+    new WinstonLogger(),
+    new PrometheusLogger(),
+  ]),
+});
+```
+
+### Best Practices
+
+1. **Structured Logging**
+
+```typescript
+logger.info("Generation started", {
+  modelId: "llama2",
+  timestamp: new Date().toISOString(),
+  requestId: "123",
+  userId: "user-456",
+});
+```
+
+2. **Error Context**
+
+```typescript
+try {
+  await client.generate({ prompt: "test" });
+} catch (error) {
+  logger.error("Generation failed", error, {
+    requestId: "123",
+    attempt: 2,
+    duration: 1500,
+  });
+}
+```
+
+3. **Performance Tracking**
+
+```typescript
+const startTime = Date.now();
+try {
+  await client.generate({ prompt: "test" });
+} finally {
+  logger.logPerformance("generation", Date.now() - startTime, {
+    modelId: "llama2",
+  });
+}
+```
+
+4. **Resource Monitoring**
+
+```typescript
+setInterval(() => {
+  const memoryUsage = process.memoryUsage();
+  logger.logResourceUsage("heap-memory", memoryUsage.heapUsed, {
+    total: memoryUsage.heapTotal,
+  });
+}, 60000);
+```

@@ -28,6 +28,71 @@ class TestLogger implements Logger {
 		this.logs.push({ level: "error", message, error, context });
 	}
 
+	logPerformance(
+		operation: string,
+		durationMs: number,
+		context?: Record<string, unknown>,
+	) {
+		this.logs.push({
+			level: "performance",
+			message: operation,
+			context: { durationMs, ...context },
+		});
+	}
+
+	logResourceUsage(
+		resource: string,
+		usage: number,
+		context?: Record<string, unknown>,
+	) {
+		this.logs.push({
+			level: "resource",
+			message: resource,
+			context: { usage, ...context },
+		});
+	}
+
+	logModelEvent(
+		event: "load" | "unload" | "configure",
+		modelId: string,
+		context?: Record<string, unknown>,
+	) {
+		this.logs.push({
+			level: "model",
+			message: event,
+			context: { modelId, ...context },
+		});
+	}
+
+	logTemplateUsage(
+		templateId: string,
+		type: "config" | "prompt",
+		context?: Record<string, unknown>,
+	) {
+		this.logs.push({
+			level: "template",
+			message: templateId,
+			context: { type, ...context },
+		});
+	}
+
+	logGenerationMetrics(
+		modelId: string,
+		metrics: {
+			promptTokens: number;
+			totalTokens: number;
+			durationMs: number;
+			tokensPerSecond: number;
+		},
+		context?: Record<string, unknown>,
+	) {
+		this.logs.push({
+			level: "metrics",
+			message: modelId,
+			context: { metrics, ...context },
+		});
+	}
+
 	clear() {
 		this.logs = [];
 	}

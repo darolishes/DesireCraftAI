@@ -1,11 +1,14 @@
 import { Ollama } from "ollama";
 import {
+	type ConfigTemplate,
 	type GenerateOptions,
 	type ModelConfig,
 	type ModelConfigOptions,
 	type ModelManager,
 	type ModelStatus,
+	type PromptTemplate,
 	type StreamHandler,
+	type TemplateManager,
 	validateGenerateOptions,
 	validateModelConfig,
 } from "../types";
@@ -30,21 +33,124 @@ export interface Logger {
 		error?: Error,
 		context?: Record<string, unknown>,
 	): void;
+
+	// Performance logging
+	logPerformance(
+		operation: string,
+		durationMs: number,
+		context?: Record<string, unknown>,
+	): void;
+
+	// Resource usage logging
+	logResourceUsage(
+		resource: string,
+		usage: number,
+		context?: Record<string, unknown>,
+	): void;
+
+	// Model lifecycle logging
+	logModelEvent(
+		event: "load" | "unload" | "configure",
+		modelId: string,
+		context?: Record<string, unknown>,
+	): void;
+
+	// Template usage logging
+	logTemplateUsage(
+		templateId: string,
+		type: "config" | "prompt",
+		context?: Record<string, unknown>,
+	): void;
+
+	// Generation metrics logging
+	logGenerationMetrics(
+		modelId: string,
+		metrics: {
+			promptTokens: number;
+			totalTokens: number;
+			durationMs: number;
+			tokensPerSecond: number;
+		},
+		context?: Record<string, unknown>,
+	): void;
 }
 
 // Default console logger implementation
 export class ConsoleLogger implements Logger {
 	debug(message: string, context?: Record<string, unknown>) {
-		console.debug(message, context);
+		console.debug(`[DEBUG] ${message}`, context);
 	}
+
 	info(message: string, context?: Record<string, unknown>) {
-		console.info(message, context);
+		console.info(`[INFO] ${message}`, context);
 	}
+
 	warn(message: string, context?: Record<string, unknown>) {
-		console.warn(message, context);
+		console.warn(`[WARN] ${message}`, context);
 	}
+
 	error(message: string, error?: Error, context?: Record<string, unknown>) {
-		console.error(message, error, context);
+		console.error(`[ERROR] ${message}`, error?.stack || error, context);
+	}
+
+	logPerformance(
+		operation: string,
+		durationMs: number,
+		context?: Record<string, unknown>,
+	) {
+		console.info(`[PERF] ${operation}: ${durationMs}ms`, context);
+	}
+
+	logResourceUsage(
+		resource: string,
+		usage: number,
+		context?: Record<string, unknown>,
+	) {
+		console.info(`[RESOURCE] ${resource}: ${this.formatBytes(usage)}`, context);
+	}
+
+	logModelEvent(
+		event: "load" | "unload" | "configure",
+		modelId: string,
+		context?: Record<string, unknown>,
+	) {
+		console.info(`[MODEL] ${event.toUpperCase()}: ${modelId}`, context);
+	}
+
+	logTemplateUsage(
+		templateId: string,
+		type: "config" | "prompt",
+		context?: Record<string, unknown>,
+	) {
+		console.info(`[TEMPLATE] ${type.toUpperCase()}: ${templateId}`, context);
+	}
+
+	logGenerationMetrics(
+		modelId: string,
+		metrics: {
+			promptTokens: number;
+			totalTokens: number;
+			durationMs: number;
+			tokensPerSecond: number;
+		},
+		context?: Record<string, unknown>,
+	) {
+		console.info(
+			`[METRICS] ${modelId}: ${metrics.totalTokens} tokens in ${metrics.durationMs}ms (${metrics.tokensPerSecond.toFixed(2)} tokens/sec)`,
+			metrics,
+			context,
+		);
+	}
+
+	private formatBytes(bytes: number): string {
+		const units = ["B", "KB", "MB", "GB", "TB"];
+		let size = bytes;
+		let unitIndex = 0;
+		while (size >= 1024 && unitIndex < units.length - 1) {
+			size /= 1024;
+			unitIndex++;
+		}
+		return `${size.toFixed(2)} ${units[unitIndex]}`;
 	}
 }
 
@@ -81,13 +187,15 @@ interface ClientOptions {
 	logger?: Logger;
 }
 
-export class GenerativeClient implements ModelManager {
+export class GenerativeClient implements ModelManager, TemplateManager {
 	private ollama: Ollama;
 	private maxRetries: number;
 	private baseRetryDelay: number;
 	private logger: Logger;
 	private modelConfigs: Map<string, ModelConfig>;
 	private modelStatus: Map<string, ModelStatus>;
+	private configTemplates: Map<string, ConfigTemplate>;
+	private promptTemplates: Map<string, PromptTemplate>;
 
 	constructor(options: ClientOptions = {}) {
 		const {
@@ -116,6 +224,8 @@ export class GenerativeClient implements ModelManager {
 
 		this.modelConfigs = new Map();
 		this.modelStatus = new Map();
+		this.configTemplates = new Map();
+		this.promptTemplates = new Map();
 
 		// Initialize with default Ollama models
 		this.modelConfigs.set("llama2", {
@@ -137,6 +247,112 @@ export class GenerativeClient implements ModelManager {
 					default: 0.9,
 				},
 			},
+		});
+
+		// Initialize with default templates
+		this.initializeDefaultTemplates();
+	}
+
+	private initializeDefaultTemplates() {
+		// Add default configuration templates
+		const defaultTemplates: ConfigTemplate[] = [
+			{
+				id: "low-memory",
+				name: "Low Memory Mode",
+				description: "Optimized for systems with limited memory",
+				hardware: {
+					minMemory: 4 * 1024 * 1024 * 1024, // 4GB
+					gpuRequired: false,
+				},
+				config: {
+					parameters: {
+						contextLength: 2048,
+						quantization: "4bit",
+						threads: 4,
+						batchSize: 512,
+					},
+					resources: {
+						maxMemory: 4 * 1024 * 1024 * 1024,
+					},
+					performance: {
+						useGpu: false,
+					},
+				},
+				modelPatterns: ["*"],
+			},
+			{
+				id: "gpu-optimized",
+				name: "GPU Optimized Mode",
+				description: "Optimized for systems with GPU",
+				hardware: {
+					minGpuMemory: 8 * 1024 * 1024 * 1024, // 8GB
+					gpuRequired: true,
+				},
+				config: {
+					parameters: {
+						gpuLayers: 32,
+						batchSize: 1024,
+					},
+					performance: {
+						useGpu: true,
+						useTensorCores: true,
+					},
+				},
+				modelPatterns: ["*"],
+			},
+		];
+
+		// Add default prompt templates
+		const defaultPrompts: PromptTemplate[] = [
+			{
+				id: "code-review",
+				name: "Code Review",
+				description: "Review code changes and provide feedback",
+				template:
+					"Review the following code changes and provide feedback:\n\nLanguage: {{language}}\nCode:\n{{code}}\n\nPlease focus on:\n- Code quality\n- Best practices\n- Potential issues\n- Performance considerations",
+				variables: [
+					{
+						name: "language",
+						description: "Programming language",
+						required: true,
+					},
+					{
+						name: "code",
+						description: "Code to review",
+						required: true,
+						validation: {
+							minLength: 10,
+						},
+					},
+				],
+				systemTemplate:
+					"You are an experienced code reviewer with expertise in {{language}}.",
+				modelSettings: {
+					models: ["codellama", "llama2"],
+					temperature: 0.3,
+					configTemplate: "gpu-optimized",
+				},
+				examples: [
+					{
+						description: "TypeScript code review",
+						variables: {
+							language: "TypeScript",
+							code: "function add(a: any, b: any) { return a + b; }",
+						},
+						output:
+							"Issues found:\n1. Type safety: Parameters use 'any' type\n2. Missing return type\n3. No input validation\n\nSuggested improvement:\n```typescript\nfunction add(a: number, b: number): number {\n  return a + b;\n}\n```",
+					},
+				],
+			},
+		];
+
+		// Initialize templates
+		defaultTemplates.forEach((template) => {
+			this.configTemplates.set(template.id, template);
+		});
+
+		defaultPrompts.forEach((template) => {
+			this.promptTemplates.set(template.id, template);
 		});
 	}
 
@@ -672,5 +888,161 @@ export class GenerativeClient implements ModelManager {
 			this.logger.error("Validation failed", validationError);
 			throw validationError;
 		}
+	}
+
+	async listConfigTemplates(): Promise<ConfigTemplate[]> {
+		return Array.from(this.configTemplates.values());
+	}
+
+	async getConfigTemplate(id: string): Promise<ConfigTemplate | null> {
+		return this.configTemplates.get(id) || null;
+	}
+
+	async applyConfigTemplate(
+		modelId: string,
+		templateId: string,
+	): Promise<void> {
+		const template = await this.getConfigTemplate(templateId);
+		if (!template) {
+			throw new GenerativeError(
+				`Configuration template '${templateId}' not found`,
+				GenerativeErrorCode.VALIDATION_FAILED,
+			);
+		}
+
+		// Check if model matches template patterns
+		const modelMatches = template.modelPatterns.some((pattern) => {
+			if (pattern === "*") return true;
+			if (pattern.endsWith("*")) {
+				const prefix = pattern.slice(0, -1);
+				return modelId.startsWith(prefix);
+			}
+			return modelId === pattern;
+		});
+
+		if (!modelMatches) {
+			throw new GenerativeError(
+				`Model '${modelId}' is not compatible with template '${templateId}'`,
+				GenerativeErrorCode.VALIDATION_FAILED,
+			);
+		}
+
+		// Check hardware requirements
+		if (template.hardware) {
+			const { minMemory, minGpuMemory, gpuRequired, metalSupport } =
+				template.hardware;
+
+			// TODO: Implement hardware checks
+			this.logger.warn("Hardware requirements checking not implemented", {
+				modelId,
+				templateId,
+				requirements: template.hardware,
+			});
+		}
+
+		// Apply configuration
+		await this.updateModelConfig(modelId, template.config);
+	}
+
+	async listPromptTemplates(): Promise<PromptTemplate[]> {
+		return Array.from(this.promptTemplates.values());
+	}
+
+	async getPromptTemplate(id: string): Promise<PromptTemplate | null> {
+		return this.promptTemplates.get(id) || null;
+	}
+
+	async generateFromTemplate(
+		templateId: string,
+		variables: Record<string, string>,
+		options?: Partial<GenerateOptions>,
+	): Promise<string> {
+		const template = await this.getPromptTemplate(templateId);
+		if (!template) {
+			throw new GenerativeError(
+				`Prompt template '${templateId}' not found`,
+				GenerativeErrorCode.VALIDATION_FAILED,
+			);
+		}
+
+		// Validate required variables
+		template.variables.forEach((variable) => {
+			if (variable.required && !variables[variable.name]) {
+				throw new GenerativeError(
+					`Missing required variable '${variable.name}'`,
+					GenerativeErrorCode.VALIDATION_FAILED,
+				);
+			}
+
+			// Apply default value if missing
+			if (!variables[variable.name] && variable.defaultValue) {
+				variables[variable.name] = variable.defaultValue;
+			}
+
+			// Validate variable value
+			if (variable.validation && variables[variable.name]) {
+				const value = variables[variable.name];
+				const { minLength, maxLength, pattern } = variable.validation;
+
+				if (minLength && value.length < minLength) {
+					throw new GenerativeError(
+						`Variable '${variable.name}' must be at least ${minLength} characters`,
+						GenerativeErrorCode.VALIDATION_FAILED,
+					);
+				}
+
+				if (maxLength && value.length > maxLength) {
+					throw new GenerativeError(
+						`Variable '${variable.name}' cannot exceed ${maxLength} characters`,
+						GenerativeErrorCode.VALIDATION_FAILED,
+					);
+				}
+
+				if (pattern && !new RegExp(pattern).test(value)) {
+					throw new GenerativeError(
+						`Variable '${variable.name}' does not match required pattern`,
+						GenerativeErrorCode.VALIDATION_FAILED,
+					);
+				}
+			}
+		});
+
+		// Process template variables
+		const prompt = Object.entries(variables).reduce(
+			(str, [key, value]) => str.replace(new RegExp(`{{${key}}}`, "g"), value),
+			template.template,
+		);
+
+		// Process system prompt template
+		const systemPrompt = template.systemTemplate
+			? Object.entries(variables).reduce(
+					(str, [key, value]) =>
+						str.replace(new RegExp(`{{${key}}}`, "g"), value),
+					template.systemTemplate,
+				)
+			: undefined;
+
+		// Apply model settings
+		const generateOptions: GenerateOptions = {
+			prompt,
+			model: options?.model || (template.modelSettings?.models[0] ?? "llama2"),
+			context: options?.context || [],
+			temperature:
+				options?.temperature ?? template.modelSettings?.temperature ?? 0.7,
+			topP: options?.topP ?? template.modelSettings?.topP ?? 0.9,
+			stream: options?.stream || false,
+			...(systemPrompt && { system: systemPrompt }),
+		};
+
+		// Apply configuration template if specified
+		if (template.modelSettings?.configTemplate) {
+			await this.applyConfigTemplate(
+				generateOptions.model,
+				template.modelSettings.configTemplate,
+			);
+		}
+
+		// Generate response
+		return this.generate(generateOptions);
 	}
 }

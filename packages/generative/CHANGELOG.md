@@ -5,6 +5,78 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2024-01-26
+
+### Added
+
+- Enhanced logging system
+  - Performance logging with duration tracking
+  - Resource usage monitoring
+  - Model lifecycle events
+  - Template usage tracking
+  - Generation metrics with token statistics
+  - Structured logging format
+- Integration examples
+  - Winston logger implementation
+  - Prometheus metrics integration
+  - Multi-destination logging
+- Logging best practices documentation
+  - Structured logging patterns
+  - Error context handling
+  - Performance tracking
+  - Resource monitoring
+
+### Changed
+
+- Improved logger interface with specialized methods
+- Enhanced console logger with formatted output
+- Updated documentation with logging examples
+- Added logging categories and contexts
+
+### Fixed
+
+- Log message formatting consistency
+- Error stack trace handling
+- Resource usage calculations
+- Metric precision in logs
+
+## [0.4.0] - 2024-01-26
+
+### Added
+
+- Configuration template system
+  - Predefined templates for common use cases
+  - Hardware-aware configuration
+  - Model pattern matching
+  - Template validation
+- Prompt template system
+  - Variable substitution
+  - Variable validation
+  - System prompt templates
+  - Model settings integration
+  - Example management
+- Template management interface
+  - Template listing and retrieval
+  - Template application
+  - Template-based generation
+- Built-in templates
+  - Low memory configuration
+  - GPU optimized configuration
+  - Code review prompt template
+
+### Changed
+
+- Enhanced model configuration with templates
+- Improved prompt generation workflow
+- Updated documentation with template examples
+- Extended client interface with template support
+
+### Fixed
+
+- Template validation edge cases
+- Variable substitution in system prompts
+- Hardware requirement checking
+
 ## [0.3.0] - 2024-01-26
 
 ### Added

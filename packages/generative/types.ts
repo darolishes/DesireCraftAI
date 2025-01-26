@@ -199,6 +199,9 @@ export interface ModelConfig {
 
 	/** Model-specific metadata */
 	metadata?: Record<string, unknown>;
+
+	/** Raw model configuration */
+	config?: Record<string, unknown>;
 }
 
 /**
@@ -250,3 +253,128 @@ export interface ModelManager {
 export const validateModelConfig = (config: unknown): ModelConfigOptions => {
 	return modelConfigSchema.parse(config);
 };
+
+/**
+ * Configuration template for model settings
+ */
+export const configTemplateSchema = z.object({
+	/** Template identifier */
+	id: z.string().min(1),
+
+	/** Display name */
+	name: z.string().min(1),
+
+	/** Template description */
+	description: z.string().optional(),
+
+	/** Hardware requirements */
+	hardware: z
+		.object({
+			minMemory: z.number().optional(),
+			minGpuMemory: z.number().optional(),
+			gpuRequired: z.boolean().optional(),
+			metalSupport: z.boolean().optional(),
+		})
+		.optional(),
+
+	/** Model configuration */
+	config: modelConfigSchema,
+
+	/** Compatible model patterns */
+	modelPatterns: z.array(z.string()).min(1),
+
+	/** Tags for categorization */
+	tags: z.array(z.string()).optional(),
+});
+
+export type ConfigTemplate = z.infer<typeof configTemplateSchema>;
+
+/**
+ * Prompt template for structured generation
+ */
+export const promptTemplateSchema = z.object({
+	/** Template identifier */
+	id: z.string().min(1),
+
+	/** Display name */
+	name: z.string().min(1),
+
+	/** Template description */
+	description: z.string().optional(),
+
+	/** The prompt template with variables */
+	template: z.string().min(1),
+
+	/** Variable definitions */
+	variables: z.array(
+		z.object({
+			name: z.string().min(1),
+			description: z.string().optional(),
+			required: z.boolean().default(true),
+			defaultValue: z.string().optional(),
+			validation: z
+				.object({
+					minLength: z.number().optional(),
+					maxLength: z.number().optional(),
+					pattern: z.string().optional(),
+				})
+				.optional(),
+		}),
+	),
+
+	/** System prompt template */
+	systemTemplate: z.string().optional(),
+
+	/** Recommended model settings */
+	modelSettings: z
+		.object({
+			models: z.array(z.string()),
+			temperature: z.number().optional(),
+			topP: z.number().optional(),
+			configTemplate: z.string().optional(),
+		})
+		.optional(),
+
+	/** Example usage */
+	examples: z
+		.array(
+			z.object({
+				description: z.string().optional(),
+				variables: z.record(z.string()),
+				output: z.string(),
+			}),
+		)
+		.optional(),
+
+	/** Tags for categorization */
+	tags: z.array(z.string()).optional(),
+});
+
+export type PromptTemplate = z.infer<typeof promptTemplateSchema>;
+
+/**
+ * Template management operations
+ */
+export interface TemplateManager {
+	/** List available configuration templates */
+	listConfigTemplates(): Promise<ConfigTemplate[]>;
+
+	/** Get configuration template by ID */
+	getConfigTemplate(id: string): Promise<ConfigTemplate | null>;
+
+	/** Apply configuration template to model */
+	applyConfigTemplate(modelId: string, templateId: string): Promise<void>;
+
+	/** List available prompt templates */
+	listPromptTemplates(): Promise<PromptTemplate[]>;
+
+	/** Get prompt template by ID */
+	getPromptTemplate(id: string): Promise<PromptTemplate | null>;
+
+	/** Generate text using prompt template */
+	generateFromTemplate(
+		templateId: string,
+		variables: Record<string, string>,
+		options?: Partial<GenerateOptions>,
+	): Promise<string>;
+}
