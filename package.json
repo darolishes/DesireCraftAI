@@ -1,25 +1,33 @@
 {
-  "name": "nextjs",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@types/node": "20.6.2",
-    "@types/react": "18.2.22",
-    "@types/react-dom": "18.2.7",
-    "autoprefixer": "10.4.15",
-    "eslint": "8.49.0",
-    "eslint-config-next": "13.5.1",
-    "next": "13.5.1",
-    "postcss": "8.4.30",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "tailwindcss": "3.3.3",
-    "typescript": "5.2.2"
-  }
+	"name": "saastarta-nextjs",
+	"private": true,
+	"scripts": {
+		"build": "dotenv -c -- turbo build",
+		"dev": "dotenv -c -- turbo dev --concurrency 15",
+		"lint": "biome lint .",
+		"clean": "turbo clean",
+		"format": "biome format . --write",
+		"db:push": "turbo db:push",
+		"db:generate": "turbo db:generate",
+		"db:studio": "pnpm --filter database run db:studio",
+		"mail:preview": "pnpm --filter mail run preview",
+		"e2e": "pnpm --filter web e2e"
+	},
+	"engines": {
+		"node": ">=20"
+	},
+	"packageManager": "pnpm@9.3.0",
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"dotenv-cli": "^7.4.4",
+		"tsconfig": "workspace:*",
+		"turbo": "^2.3.3",
+		"typescript": "5.6.3"
+	},
+	"pnpm": {
+		"overrides": {
+			"@types/react": "npm:types-react@19.0.0-rc.1",
+			"@types/react-dom": "npm:types-react-dom@19.0.0-rc.1"
+		}
+	}
 }

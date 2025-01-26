@@ -1,0 +1,60 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+.swc/
+.turbo/
+
+# Environment and local files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache and temporary files
+.content-collections/
+*.tsbuildinfo
+next-env.d.ts
+
+# Testing
+coverage/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE and system files
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# Email preview
+.react-email/
+
+# Vercel
+.vercel/
+
+# Generated files
+src/zod/**/*.ts
+packages/database/src/zod/
+
+# Package specific
+packages/database/FAQ/
+apps/web/FAQ/
+
+# Cypress
+cypress/screenshots/
+cypress/videos/
+
+# Content
+.content-collections/
