@@ -1,0 +1,21 @@
+{
+	"name": "generative",
+	"version": "0.1.0",
+	"main": "index.ts",
+	"types": "index.ts",
+	"license": "MIT",
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"lint": "biome check .",
+		"format": "biome format ."
+	},
+	"dependencies": {
+		"ollama": "^0.4.4",
+		"zod": "^3.22.4"
+	},
+	"devDependencies": {
+		"@types/node": "^20.11.5",
+		"typescript": "^5.3.3"
+	}
+}
